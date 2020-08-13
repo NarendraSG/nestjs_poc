@@ -6,9 +6,9 @@ import {
   Delete,
   Param,
   Body,
-  HttpException,
-  HttpStatus,
   NotFoundException,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { UserService } from './user.service';
@@ -20,6 +20,7 @@ import {
   ApiNotFoundResponse,
   ApiCreatedResponse,
 } from '@nestjs/swagger';
+import { CreateUser, UpdateUser } from './../dto/User.dto';
 
 @ApiTags('Users')
 @Controller('user')
@@ -43,19 +44,14 @@ export class UserController {
       return user;
     }
 
-    throw new HttpException(
-      {
-        status: HttpStatus.NOT_FOUND,
-        error: 'Not Found',
-      },
-      HttpStatus.NOT_FOUND,
-    );
+    throw new NotFoundException('User not found');
   }
 
   @Post()
   @ApiCreatedResponse({ description: 'Success', type: User })
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
-  async createUser(@Body() user: User): Promise<User> {
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async createUser(@Body() user: CreateUser): Promise<User> {
     return this.userService.addUser(user);
   }
 
@@ -64,7 +60,7 @@ export class UserController {
   @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   async updateUser(
     @Param('id') userId: Types.ObjectId,
-    @Body() user: Partial<User>,
+    @Body() user: UpdateUser,
   ): Promise<any> {
     const updatesUser = await this.userService.updateUser(userId, user);
     if (!updatesUser) {

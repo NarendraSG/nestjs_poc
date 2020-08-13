@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User } from './../db/model/user';
+import { CreateUser, UpdateUser } from './../dto/User.dto';
 
 @Injectable()
 export class UserService {
@@ -15,14 +16,14 @@ export class UserService {
     return this.userModel.findById(id).exec();
   }
 
-  addUser(user: User): Promise<User> {
+  addUser(user: CreateUser): Promise<User> {
     const createUser = new this.userModel(user);
     return createUser.save();
   }
 
   updateUser(
     id: Types.ObjectId,
-    user: Partial<User>,
+    user: Partial<UpdateUser>,
   ): Promise<User | undefined> {
     return this.userModel.findByIdAndUpdate(id, user).exec();
   }
