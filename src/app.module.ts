@@ -6,9 +6,16 @@ import {
 } from '@nestjs/common';
 import { UserModule } from './user/user.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
-  imports: [UserModule],
+  imports: [
+    UserModule,
+    MongooseModule.forRoot(
+      'mongodb+srv://vs-code:vscode123@cluster0-mjqnj.mongodb.net/nestjs_poc',
+      { useNewUrlParser: true },
+    ),
+  ],
   controllers: [],
   providers: [],
 })

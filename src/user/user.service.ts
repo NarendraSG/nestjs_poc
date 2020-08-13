@@ -1,35 +1,33 @@
 import { Injectable } from '@nestjs/common';
-import { User } from './dto/user';
-import { CreateUser } from './dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { User } from './../db/model/user';
 
 @Injectable()
 export class UserService {
-  private users: Array<User>;
-  private counter: number;
-  constructor() {
-    this.users = [];
-    this.counter = 0;
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+
+  getUsers(): Promise<User[]> {
+    return this.userModel.find().exec();
   }
 
-  getUsers(): Array<User> {
-    return this.users;
+  getUser(id: Types.ObjectId): Promise<User> {
+    return this.userModel.findById(id).exec();
   }
 
-  getUser(id: number): User {
-    const pos: number = this.users.map(u => u.id).indexOf(id);
-    return pos === -1 ? null : this.users[pos];
+  addUser(user: User): Promise<User> {
+    const createUser = new this.userModel(user);
+    return createUser.save();
   }
 
-  addUser(user: CreateUser): void {
-    const { name, age, email, phone = '' } = user;
-    const userObj = {
-      id: this.counter++,
-      name,
-      age,
-      email,
-      phone,
-    };
+  updateUser(
+    id: Types.ObjectId,
+    user: Partial<User>,
+  ): Promise<User | undefined> {
+    return this.userModel.findByIdAndUpdate(id, user).exec();
+  }
 
-    this.users.push(userObj);
+  deleteUser(id: Types.ObjectId): Promise<User | undefined> {
+    return this.userModel.findOneAndDelete(id).exec();
   }
 }

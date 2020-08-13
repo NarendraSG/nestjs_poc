@@ -8,11 +8,18 @@ import {
   Body,
   HttpException,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
-
+import { Types } from 'mongoose';
 import { UserService } from './user.service';
-import { User, CreateUser } from './dto';
-import { ApiTags } from '@nestjs/swagger';
+import { User } from './../db/model/user';
+import {
+  ApiTags,
+  ApiOkResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
 
 @ApiTags('Users')
 @Controller('user')
@@ -20,13 +27,18 @@ export class UserController {
   constructor(private userService: UserService) {}
 
   @Get()
+  @ApiOkResponse({ description: 'Success', type: [User] })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
   async getUsers(): Promise<Array<User>> {
     return this.userService.getUsers();
   }
 
   @Get(':id')
-  async getUser(@Param('id') userId: string): Promise<User> {
-    const user: User = this.userService.getUser(parseInt(userId, 10));
+  @ApiOkResponse({ description: 'Success', type: User })
+  @ApiNotFoundResponse({ description: 'User Not Found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  async getUser(@Param('id') userId: Types.ObjectId): Promise<User> {
+    const user: User = await this.userService.getUser(userId);
     if (user) {
       return user;
     }
@@ -41,13 +53,36 @@ export class UserController {
   }
 
   @Post()
-  async createUser(@Body() user: CreateUser): Promise<any> {
+  @ApiCreatedResponse({ description: 'Success', type: User })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  async createUser(@Body() user: User): Promise<User> {
     return this.userService.addUser(user);
   }
 
-  @Put()
-  async updateUser(): Promise<any> {}
+  @Put(':id')
+  @ApiOkResponse({ description: 'Success' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  async updateUser(
+    @Param('id') userId: Types.ObjectId,
+    @Body() user: Partial<User>,
+  ): Promise<any> {
+    const updatesUser = await this.userService.updateUser(userId, user);
+    if (!updatesUser) {
+      throw new NotFoundException('User not found');
+    }
 
-  @Delete()
-  async deleteUser(): Promise<any> {}
+    return;
+  }
+
+  @ApiOkResponse({ description: 'Success' })
+  @ApiNotFoundResponse({ description: 'User Not Found' })
+  @ApiInternalServerErrorResponse({ description: 'Internal Server Error' })
+  @Delete(':id')
+  async deleteUser(@Param('id') userId: Types.ObjectId): Promise<any> {
+    const deletedUser = await this.userService.deleteUser(userId);
+    if (!deletedUser) {
+      throw new NotFoundException('User not found');
+    }
+    return;
+  }
 }
